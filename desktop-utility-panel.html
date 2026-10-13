@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>桌面效率面板</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+    <link rel="stylesheet" href="./node_modules/@fontsource/noto-sans-sc/400.css">
+    <link rel="stylesheet" href="./node_modules/@fontsource/noto-sans-sc/600.css">
+    <link rel="stylesheet" href="./node_modules/@fontsource/noto-sans-sc/700.css">
+    <script src="./node_modules/lucide/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #1f2a31;
+            --muted: #6d7a82;
+            --line: rgba(36, 52, 61, 0.12);
+            --panel: rgba(250, 252, 252, 0.92);
+            --panel-strong: rgba(255, 255, 255, 0.97);
+            --accent: #2f7e82;
+            --accent-soft: #dceeed;
+            --warm: #bf744f;
+            --shadow: 0 22px 60px rgba(30, 52, 60, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-width: 960px;
+            min-height: 680px;
+            margin: 0;
+            overflow: hidden;
+            color: var(--ink);
+            font-family: "Noto Sans SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+            background: #dce6e7;
+        }
+
+        body.app-shell {
+            min-width: 0;
+            min-height: 0;
+            background: transparent;
+        }
+
+        body.app-shell .desktop {
+            display: none;
+        }
+
+        body.app-shell .panel-dock {
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            transform: none;
+        }
+
+        body.app-shell .panel-dock.is-open {
+            width: 100%;
+        }
+
+        body.app-shell .panel {
+            min-height: 0;
+            height: 100%;
+            border-radius: 22px 0 0 22px;
+        }
+
+        body.app-shell .rail-button {
+            top: 50%;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .desktop {
+            position: relative;
+            min-height: 100vh;
+            padding: 42px 52px;
+            background:
+                linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+                #dce6e7;
+        }
+
+        .desktop::before,
+        .desktop::after {
+            position: absolute;
+            content: "";
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+        }
+
+        .desktop::before {
+            width: 430px;
+            height: 430px;
+            top: -180px;
+            left: 11%;
+            border-radius: 50%;
+        }
+
+        .desktop::after {
+            width: 560px;
+            height: 560px;
+            right: 9%;
+            bottom: -300px;
+            border-radius: 50%;
+        }
+
+        .desktop-copy {
+            position: relative;
+            z-index: 1;
+            max-width: 520px;
+        }
+
+        .desktop-kicker {
+            margin: 0 0 10px;
+            color: #557277;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+        }
+
+        .desktop-title {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: 0;
+        }
+
+        .desktop-subtitle {
+            margin: 12px 0 0;
+            color: #587078;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        .desktop-note {
+            position: absolute;
+            z-index: 1;
+            left: 52px;
+            bottom: 42px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: #688087;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4f9a78;
+            box-shadow: 0 0 0 4px rgba(79, 154, 120, 0.15);
+        }
+
+        .panel-dock {
+            position: fixed;
+            z-index: 10;
+            top: 50%;
+            right: 18px;
+            width: 52px;
+            transform: translateY(-50%);
+        }
+
+        .panel-dock.is-open {
+            width: min(760px, calc(100vw - 36px));
+        }
+
+        .rail-button {
+            position: absolute;
+            z-index: 3;
+            top: 50%;
+            right: 0;
+            display: grid;
+            width: 48px;
+            height: 48px;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.72);
+            box-shadow: 0 8px 24px rgba(39, 68, 75, 0.16);
+            transform: translateY(-50%);
+            transition: background 180ms ease, transform 180ms ease;
+        }
+
+        .rail-button:hover {
+            background: #fff;
+            transform: translateY(-50%) translateX(-3px);
+        }
+
+        .rail-mark {
+            position: relative;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--accent);
+            border-radius: 7px;
+        }
+
+        .rail-mark::before,
+        .rail-mark::after {
+            position: absolute;
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        .rail-mark::before {
+            top: 4px;
+            left: 4px;
+        }
+
+        .rail-mark::after {
+            right: 4px;
+            bottom: 4px;
+        }
+
+        .panel {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 535px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 22px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(24px) scale(0.98);
+            transform-origin: right center;
+            transition: opacity 180ms ease, transform 220ms ease;
+        }
+
+        .panel-dock.is-open .panel {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0) scale(1);
+        }
+
+        .panel-dock.is-open .rail-button {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 2px 2px 18px;
+            border-bottom: 1px solid var(--line);
+            -webkit-app-region: drag;
+            cursor: move;
+        }
+
+        .panel-heading {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            pointer-events: none;
+        }
+
+        .panel-logo {
+            display: grid;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            border-radius: 12px;
+            color: #fff;
+            background: var(--accent);
+            font-size: 16px;
+            font-weight: 800;
+            box-shadow: 0 7px 14px rgba(47, 126, 130, 0.22);
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 18px;
+            letter-spacing: 0;
+        }
+
+        .panel-caption {
+            margin: 3px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            -webkit-app-region: no-drag;
+        }
+
+        .icon-button {
+            display: grid;
+            width: 32px;
+            height: 32px;
+            place-items: center;
+            border-radius: 9px;
+            color: var(--muted);
+            background: transparent;
+            transition: color 150ms ease, background 150ms ease;
+        }
+
+        .icon-button:hover {
+            color: var(--ink);
+            background: rgba(47, 126, 130, 0.1);
+        }
+
+        .icon-button.quit-button:hover {
+            color: #b9534d;
+            background: rgba(185, 83, 77, 0.1);
+        }
+
+        .panel-body {
+            display: grid;
+            grid-template-columns: minmax(0, 1.18fr) minmax(250px, 0.82fr);
+            gap: 22px;
+            min-height: 0;
+            height: calc(100% - 64px);
+            padding-top: 18px;
+            overflow: hidden;
+        }
+
+        .resize-handle {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            z-index: 5;
+            width: 18px;
+            height: 18px;
+            border-right: 2px solid rgba(47, 126, 130, 0.6);
+            border-bottom: 2px solid rgba(47, 126, 130, 0.6);
+            border-radius: 0 0 7px 0;
+            cursor: nwse-resize;
+            -webkit-app-region: no-drag;
+        }
+
+        .resize-handle::before,
+        .resize-handle::after {
+            position: absolute;
+            right: 2px;
+            bottom: 3px;
+            width: 8px;
+            height: 1px;
+            background: rgba(47, 126, 130, 0.5);
+            content: "";
+            transform: rotate(-45deg);
+            transform-origin: right center;
+        }
+
+        .resize-handle::after {
+            right: 4px;
+            bottom: 7px;
+            width: 5px;
+        }
+
+        .apps-column {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .apps-scroll {
+            flex: 1 1 0;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .todo-column {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            padding-left: 22px;
+            border-left: 1px solid var(--line);
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .section-meta {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .section-tools {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .app-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+            gap: 8px;
+            margin-bottom: 21px;
+        }
+
+        .app-item {
+            position: relative;
+            min-width: 0;
+            padding: 8px 5px 7px;
+            border-radius: 12px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.44);
+            transition: background 150ms ease, transform 150ms ease;
+        }
+
+        .app-item:hover {
+            background: rgba(255, 255, 255, 0.96);
+            transform: translateY(-2px);
+        }
+
+        .app-icon {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            margin: 0 auto 6px;
+            place-items: center;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .app-icon img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+            image-rendering: auto;
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.16));
+        }
+
+        .app-icon.has-native-icon {
+            background: rgba(255, 255, 255, 0.8) !important;
+        }
+
+        .app-name {
+            display: block;
+            overflow: hidden;
+            color: #46565d;
+            font-size: 11px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .category {
+            margin-bottom: 17px;
+        }
+
+        .category-heading {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 8px;
+            color: #59686e;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .category-heading::before {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--accent);
+            content: "";
+        }
+
+        .category .app-row {
+            margin-bottom: 0;
+        }
+
+        .todo-summary {
+            margin: 1px 0 17px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        [data-lucide] {
+            width: 15px;
+            height: 15px;
+            stroke-width: 1.8;
+        }
+
+        .add-button [data-lucide] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .todo-list {
+            flex: 1 1 0;
+            display: grid;
+            gap: 8px;
+            min-height: 70px;
+            overflow: auto;
+            padding-right: 3px;
+        }
+
+        .todo-history {
+            flex: 1 1 0;
+            display: grid;
+            gap: 7px;
+            min-height: 72px;
+            overflow: auto;
+            margin-top: 16px;
+            padding-top: 13px;
+            border-top: 1px solid var(--line);
+        }
+
+        .history-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .history-item {
+            display: grid;
+            gap: 5px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(36, 52, 61, 0.07);
+            color: #879397;
+            font-size: 11px;
+        }
+
+        .history-top {
+            display: grid;
+            grid-template-columns: 36px 17px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+        }
+
+        .todo-number,
+        .history-number {
+            color: #9ca8ab;
+            font-size: 10px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .history-check {
+            display: grid;
+            width: 17px;
+            height: 17px;
+            place-items: center;
+            border-radius: 5px;
+            color: #fff;
+            background: var(--accent);
+            font-size: 10px;
+        }
+
+        .history-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-decoration: line-through;
+        }
+
+        .history-meta {
+            padding-left: 60px;
+            color: #9aa5a8;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+
+        .history-note,
+        .todo-note {
+            overflow: hidden;
+            color: #68777d;
+            font-size: 11px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .history-note {
+            padding-left: 60px;
+        }
+
+        .todo-note {
+            margin-top: 4px;
+        }
+
+        .document-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            max-width: 140px;
+            overflow: hidden;
+            padding: 3px 6px;
+            border-radius: 6px;
+            color: var(--accent);
+            background: var(--accent-soft);
+            font-size: 10px;
+            text-decoration: none;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .document-link:hover {
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .todo-item {
+            display: grid;
+            grid-template-columns: 36px 18px minmax(0, 1fr) auto;
+            align-items: start;
+            gap: 8px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(36, 52, 61, 0.08);
+        }
+
+        .todo-check {
+            width: 17px;
+            height: 17px;
+            margin-top: 1px;
+            border: 1.5px solid #9aabb0;
+            border-radius: 5px;
+            background: transparent;
+        }
+
+        .todo-check.is-done {
+            display: grid;
+            place-items: center;
+            border-color: var(--accent);
+            color: #fff;
+            background: var(--accent);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .todo-text {
+            min-width: 0;
+            color: #34434a;
+            font-size: 13px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .todo-text.is-done {
+            color: #93a0a4;
+            text-decoration: line-through;
+        }
+
+        .todo-time {
+            margin-top: 3px;
+            color: #a0aaad;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 1px;
+            opacity: 0;
+            transition: opacity 150ms ease;
+        }
+
+        .todo-item:hover .todo-actions {
+            opacity: 1;
+        }
+
+        .tiny-button {
+            display: grid;
+            width: 24px;
+            height: 24px;
+            place-items: center;
+            border-radius: 7px;
+            color: #839196;
+            background: transparent;
+            font-size: 12px;
+        }
+
+        .tiny-button:hover {
+            color: var(--ink);
+            background: rgba(47, 126, 130, 0.1);
+        }
+
+        .empty-state {
+            padding: 28px 8px;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .todo-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: 7px;
+            margin-top: 15px;
+        }
+
+        .attach-button {
+            display: grid;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.58);
+        }
+
+        .attach-button:hover {
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .attached-document {
+            display: none;
+            margin-top: 7px;
+            overflow: hidden;
+            color: var(--accent);
+            font-size: 10px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .attached-document.is-visible {
+            display: block;
+        }
+
+        .todo-input {
+            min-width: 0;
+            grid-column: 1 / -1;
+            padding: 9px 10px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            outline: 0;
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+
+        .todo-note-input {
+            min-width: 0;
+            grid-column: 1 / -1;
+            min-height: 52px;
+            max-height: 110px;
+            padding: 8px 10px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            outline: 0;
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.58);
+            font-size: 11px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        .todo-note-input:focus {
+            border-color: rgba(47, 126, 130, 0.58);
+            box-shadow: 0 0 0 3px rgba(47, 126, 130, 0.1);
+        }
+
+        .todo-input:focus {
+            border-color: rgba(47, 126, 130, 0.58);
+            box-shadow: 0 0 0 3px rgba(47, 126, 130, 0.1);
+        }
+
+        .add-button {
+            min-width: 34px;
+            padding: 0 11px;
+            border-radius: 9px;
+            color: #fff;
+            background: var(--accent);
+            font-size: 16px;
+            transition: background 150ms ease, transform 150ms ease;
+        }
+
+        .add-button:hover {
+            background: #256c70;
+            transform: translateY(-1px);
+        }
+
+        .todo-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 13px;
+        }
+
+        .todo-footer-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .clear-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+            color: var(--muted);
+            background: transparent;
+            font-size: 11px;
+        }
+
+        .clear-button:hover {
+            color: var(--warm);
+        }
+
+        .scan-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.56);
+            font-size: 10px;
+        }
+
+        .scan-button:hover {
+            color: var(--ink);
+            background: #fff;
+        }
+
+        .scan-button:disabled {
+            cursor: wait;
+            opacity: 0.55;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            z-index: 50;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 22px;
+            background: rgba(23, 38, 42, 0.28);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 160ms ease;
+        }
+
+        .modal-backdrop.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            width: min(520px, 100%);
+            max-height: min(680px, 100%);
+            overflow: auto;
+            padding: 22px;
+            border: 1px solid rgba(255,255,255,0.86);
+            border-radius: 14px;
+            background: rgba(250, 253, 252, 0.95);
+            box-shadow: 0 24px 70px rgba(23, 38, 42, 0.24);
+            backdrop-filter: blur(22px);
+            transform: translateY(10px) scale(0.98);
+            transition: transform 160ms ease;
+        }
+
+        .modal-backdrop.is-visible .modal {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .modal-eyebrow {
+            margin: 0 0 5px;
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+        }
+
+        .modal-help {
+            margin: 0 0 17px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .settings-form {
+            display: grid;
+            gap: 12px;
+        }
+
+        .settings-form label {
+            display: grid;
+            gap: 6px;
+            color: #56676c;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .settings-form input,
+        .chat-form input {
+            min-width: 0;
+            width: 100%;
+            padding: 10px 11px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            outline: 0;
+            color: var(--ink);
+            background: rgba(255,255,255,0.78);
+            font-size: 12px;
+        }
+
+        .settings-form input:focus,
+        .chat-form input:focus {
+            border-color: rgba(47, 126, 130, 0.58);
+            box-shadow: 0 0 0 3px rgba(47, 126, 130, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .button-primary,
+        .button-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 33px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .button-primary {
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .button-primary:hover { background: #256c70; }
+        .button-secondary {
+            color: var(--ink);
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.62);
+        }
+        .button-secondary:hover { background: #fff; }
+        .modal-status {
+            min-width: 0;
+            flex: 1;
+            color: var(--muted);
+            font-size: 10px;
+            text-align: right;
+        }
+
+        .chat-modal {
+            display: flex;
+            flex-direction: column;
+            height: min(600px, 100%);
+        }
+
+        .chat-messages {
+            display: grid;
+            align-content: start;
+            gap: 9px;
+            min-height: 0;
+            flex: 1;
+            overflow: auto;
+            padding: 4px 2px 16px;
+        }
+
+        .chat-message {
+            max-width: 88%;
+            padding: 9px 11px;
+            border-radius: 10px;
+            color: #425259;
+            background: rgba(223, 238, 237, 0.7);
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .chat-message.user {
+            justify-self: end;
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .plan-preview {
+            display: none;
+            gap: 8px;
+            margin: 0 2px 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+        }
+
+        .plan-preview.is-visible {
+            display: grid;
+        }
+
+        .plan-preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .plan-preview-title {
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .plan-summary {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .plan-task {
+            display: grid;
+            grid-template-columns: 22px minmax(0, 1fr) auto;
+            align-items: start;
+            gap: 7px;
+            padding: 8px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.56);
+        }
+
+        .plan-task-index {
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .plan-task-text {
+            color: var(--ink);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .plan-task-note {
+            margin-top: 3px;
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .plan-task-time {
+            color: var(--muted);
+            font-size: 10px;
+            white-space: nowrap;
+        }
+
+        .plan-preview-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 7px;
+            padding-top: 2px;
+        }
+
+        .chat-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 7px;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+        }
+
+        .toast {
+            position: fixed;
+            z-index: 30;
+            right: 28px;
+            bottom: 28px;
+            max-width: 280px;
+            padding: 11px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            border-radius: 10px;
+            color: #fff;
+            background: rgba(31, 42, 49, 0.88);
+            box-shadow: 0 12px 28px rgba(31, 42, 49, 0.2);
+            font-size: 12px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        .toast.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 900px) {
+            body {
+                min-width: 760px;
+            }
+
+            .panel-dock.is-open {
+                width: calc(100vw - 36px);
+            }
+
+            .panel-body {
+                grid-template-columns: 1fr 0.8fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="desktop">
+        <div class="desktop-copy">
+            <p class="desktop-kicker">Desktop workspace</p>
+            <h1 class="desktop-title">把常用的东西放在手边</h1>
+            <p class="desktop-subtitle">面板默认收在桌面右侧。悬停小图标，应用启动器和今日清单就会展开。</p>
+        </div>
+        <div class="desktop-note">
+            <span class="status-dot"></span>
+            <span>本地原型 · Todo 数据自动保存</span>
+        </div>
+    </main>
+
+    <aside class="panel-dock" id="panelDock" aria-label="桌面效率面板">
+        <button class="rail-button" id="railButton" aria-label="展开效率面板">
+            <span class="rail-mark" aria-hidden="true"></span>
+        </button>
+
+        <section class="panel" id="panel">
+            <div class="resize-handle" id="resizeHandle" title="拖动调整面板大小" aria-label="拖动调整面板大小"></div>
+            <header class="panel-header">
+                <div class="panel-heading">
+                    <div class="panel-logo">手</div>
+                    <div>
+                        <h2 class="panel-title">桌面效率面板</h2>
+                        <p class="panel-caption">常用应用与今日清单</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-button" id="aiSettingsButton" title="AI 设置" aria-label="AI 设置"><i data-lucide="sparkles"></i></button>
+                    <button class="icon-button" id="pinButton" title="固定面板" aria-label="固定面板"><i data-lucide="pin"></i></button>
+                    <button class="icon-button" id="closeButton" title="收起面板" aria-label="收起面板"><i data-lucide="x"></i></button>
+                    <button class="icon-button quit-button" id="quitButton" title="退出桌面效率面板" aria-label="退出桌面效率面板"><i data-lucide="power"></i></button>
+                </div>
+            </header>
+
+            <div class="panel-body">
+                <section class="apps-column" aria-labelledby="appsTitle">
+                    <div class="section-heading">
+                        <h3 class="section-title" id="appsTitle">应用</h3>
+                        <div class="section-tools">
+                            <button class="scan-button" id="aiOrganizeButton" title="使用 AI 整理应用"><i data-lucide="sparkles"></i></button>
+                            <button class="scan-button" id="scanButton" title="扫描 Windows 应用"><i data-lucide="refresh-cw"></i> 扫描应用</button>
+                        </div>
+                    </div>
+
+                    <div class="section-heading">
+                        <span class="section-title">常用应用</span>
+                        <span class="section-meta" id="appCount">4 个</span>
+                    </div>
+                    <div class="apps-scroll">
+                        <div class="app-row" id="favorites"></div>
+
+                        <div class="section-heading">
+                            <span class="section-title">应用分类</span>
+                            <span class="section-meta">自动整理</span>
+                        </div>
+                        <div id="categories"></div>
+                    </div>
+                </section>
+
+                <section class="todo-column" aria-labelledby="todoTitle">
+                    <div class="section-heading">
+                        <h3 class="section-title" id="todoTitle">Todo</h3>
+                        <div class="section-tools">
+                            <button class="scan-button" id="planButton" title="让 AI 规划 Todo"><i data-lucide="wand-sparkles"></i></button>
+                            <button class="scan-button" id="chatButton" title="和 Todo 助手对话"><i data-lucide="message-circle"></i></button>
+                            <span class="section-meta" id="todoCount"></span>
+                        </div>
+                    </div>
+                    <p class="todo-summary">把今天要推进的事情放在这里，完成后勾掉即可。</p>
+                    <div class="todo-list" id="todoList"></div>
+                    <form class="todo-form" id="todoForm">
+                        <input class="todo-input" id="todoInput" type="text" maxlength="80" placeholder="添加一条任务..." autocomplete="off">
+                        <textarea class="todo-note-input" id="todoNoteInput" maxlength="1000" placeholder="正文备注（可选）"></textarea>
+                        <button class="attach-button" id="attachButton" type="button" title="绑定文档" aria-label="绑定文档"><i data-lucide="paperclip"></i></button>
+                        <button class="add-button" type="submit" aria-label="添加任务"><i data-lucide="plus"></i></button>
+                    </form>
+                    <div class="attached-document" id="attachedDocument"></div>
+                    <div class="todo-history" id="todoHistory"></div>
+                    <div class="todo-footer">
+                        <div class="todo-footer-actions">
+                            <button class="clear-button" id="openTodoFile" type="button"><i data-lucide="history"></i> 打开历史视图</button>
+                            <button class="clear-button" id="clearCompleted" type="button">清理历史</button>
+                        </div>
+                        <span class="section-meta">自动保存</span>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </aside>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <div class="modal-backdrop" id="aiSettingsModal" aria-hidden="true">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="aiSettingsTitle">
+            <header class="modal-header">
+                <div>
+                    <p class="modal-eyebrow">AI CONNECTION</p>
+                    <h2 id="aiSettingsTitle">AI 设置</h2>
+                </div>
+                <button class="icon-button" data-close-modal="aiSettingsModal" title="关闭"><i data-lucide="x"></i></button>
+            </header>
+            <p class="modal-help">API Key 仅加密保存在本机用户数据目录，不会写入前端代码或日志。</p>
+            <form id="aiSettingsForm" class="settings-form">
+                <label>API Key<input id="aiApiKey" type="password" autocomplete="off" placeholder="sk-..."></label>
+                <label>接口地址<input id="aiBaseURL" type="url" placeholder="https://api.openai.com/v1"></label>
+                <label>模型<input id="aiModel" type="text" placeholder="gpt-4o-mini"></label>
+                <div class="modal-actions">
+                    <button class="button-secondary" id="clearAIKey" type="button">清除 Key</button>
+                    <span class="modal-status" id="aiSettingsStatus"></span>
+                    <button class="button-secondary" id="testAIButton" type="button">测试连接</button>
+                    <button class="button-primary" type="submit">保存设置</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="chatModal" aria-hidden="true">
+        <section class="modal chat-modal" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+            <header class="modal-header">
+                <div>
+                    <p class="modal-eyebrow">TODO ASSISTANT</p>
+                    <h2 id="chatTitle">Todo 助手</h2>
+                </div>
+                <button class="icon-button" data-close-modal="chatModal" title="关闭"><i data-lucide="x"></i></button>
+            </header>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="plan-preview" id="planPreview"></div>
+            <form class="chat-form" id="chatForm">
+                <input id="chatInput" type="text" maxlength="1000" placeholder="问问今天先做什么..." autocomplete="off">
+                <button class="button-primary" type="submit"><i data-lucide="send"></i></button>
+            </form>
+        </section>
+    </div>
+
+    <script>
+        const defaultAppGroups = [
+            {
+                name: "办公",
+                apps: [
+                    { name: "Word", icon: "W", color: "#3c74b9" },
+                    { name: "Excel", icon: "X", color: "#2e8b68" },
+                    { name: "邮件", icon: "@", color: "#b66d4d" },
+                    { name: "日历", icon: "日", color: "#7d6aa8" }
+                ]
+            },
+            {
+                name: "开发",
+                apps: [
+                    { name: "VS Code", icon: ">", color: "#2e8ec2" },
+                    { name: "终端", icon: ">_", color: "#334952" },
+                    { name: "Git", icon: "◆", color: "#d6634c" },
+                    { name: "Postman", icon: "↗", color: "#db8052" }
+                ]
+            },
+            {
+                name: "文件与工具",
+                apps: [
+                    { name: "文件管理器", icon: "▰", color: "#d29b41" },
+                    { name: "截图", icon: "□", color: "#6f8f9c" },
+                    { name: "设置", icon: "⚙", color: "#68777d" },
+                    { name: "回收站", icon: "▱", color: "#82959a" }
+                ]
+            }
+        ];
+
+        const defaultFavoriteApps = [
+            { name: "浏览器", icon: "◉", color: "#4b8e9c" },
+            { name: "微信", icon: "气", color: "#4f9b76" },
+            { name: "VS Code", icon: ">", color: "#2e8ec2" },
+            { name: "文件夹", icon: "▰", color: "#d29b41" }
+        ];
+        const MAX_FAVORITE_APPS = 10;
+        const APP_USAGE_KEY = "desktop-panel-app-usage";
+        const CATEGORY_OVERRIDES_KEY = "desktop-panel-category-overrides-ai-v2";
+
+        const defaultTodos = [
+            { id: 1, text: "整理本周工作计划", done: false },
+            { id: 2, text: "回复重要消息", done: false },
+            { id: 3, text: "留出一段不被打断的时间", done: true }
+        ];
+
+        const panelDock = document.getElementById("panelDock");
+        const resizeHandle = document.getElementById("resizeHandle");
+        const railButton = document.getElementById("railButton");
+        const closeButton = document.getElementById("closeButton");
+        const quitButton = document.getElementById("quitButton");
+        const aiSettingsButton = document.getElementById("aiSettingsButton");
+        const aiOrganizeButton = document.getElementById("aiOrganizeButton");
+        const planButton = document.getElementById("planButton");
+        const chatButton = document.getElementById("chatButton");
+        const pinButton = document.getElementById("pinButton");
+        const favorites = document.getElementById("favorites");
+        const categories = document.getElementById("categories");
+        const appCount = document.getElementById("appCount");
+        const todoList = document.getElementById("todoList");
+        const todoCount = document.getElementById("todoCount");
+        const todoForm = document.getElementById("todoForm");
+        const todoInput = document.getElementById("todoInput");
+        const todoNoteInput = document.getElementById("todoNoteInput");
+        const clearCompleted = document.getElementById("clearCompleted");
+        const openTodoFile = document.getElementById("openTodoFile");
+        const attachButton = document.getElementById("attachButton");
+        const attachedDocument = document.getElementById("attachedDocument");
+        const todoHistory = document.getElementById("todoHistory");
+        const scanButton = document.getElementById("scanButton");
+        const toast = document.getElementById("toast");
+        const aiSettingsModal = document.getElementById("aiSettingsModal");
+        const aiSettingsForm = document.getElementById("aiSettingsForm");
+        const aiApiKey = document.getElementById("aiApiKey");
+        const aiBaseURL = document.getElementById("aiBaseURL");
+        const aiModel = document.getElementById("aiModel");
+        const aiSettingsStatus = document.getElementById("aiSettingsStatus");
+        const clearAIKey = document.getElementById("clearAIKey");
+        const testAIButton = document.getElementById("testAIButton");
+        const chatModal = document.getElementById("chatModal");
+        const chatMessages = document.getElementById("chatMessages");
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const planPreview = document.getElementById("planPreview");
+
+        let appGroups = defaultAppGroups;
+        let favoriteApps = defaultFavoriteApps;
+        let todos = readTodos();
+        let archivedTodos = [];
+        let nextTodoSerial = 1;
+        let categoryOverrides = readCategoryOverrides();
+        let pinned = false;
+        let toastTimer;
+        let collapseTimer;
+        let pendingDocument = null;
+        let chatHistory = [];
+        let aiConfigured = false;
+        let railDrag = null;
+        let suppressRailClick = false;
+        let railHoverTimer;
+        let resizeDrag = null;
+        let pendingPlan = null;
+        let appUsage = readAppUsage();
+
+        if (window.desktopAPI) {
+            document.body.classList.add("app-shell");
+        }
+
+        function readTodos() {
+            try {
+                const saved = JSON.parse(localStorage.getItem("desktop-panel-todos"));
+                const source = Array.isArray(saved) ? saved : defaultTodos;
+                return source.map(normalizeTodo);
+            } catch (error) {
+                return defaultTodos.map(normalizeTodo);
+            }
+        }
+
+        function normalizeTodo(todo, index) {
+            const fallbackCreatedAt = Date.now() - ((index + 1) * 60000);
+            const createdAt = Number(todo.createdAt) || fallbackCreatedAt;
+            const done = Boolean(todo.done);
+            return {
+                ...todo,
+                serial: Number(todo.serial) || (done ? index + 1 : null),
+                text: String(todo.text || "").trim(),
+                note: String(todo.note || ""),
+                done,
+                createdAt,
+                completedAt: done ? (Number(todo.completedAt) || createdAt) : null
+            };
+        }
+
+        function saveTodos() {
+            localStorage.setItem("desktop-panel-todos", JSON.stringify(todos));
+            if (window.desktopAPI) {
+                window.desktopAPI.saveTodoFile({
+                    todos: todos.filter(todo => todo.done),
+                    nextSerial: nextTodoSerial
+                }).catch(() => showToast("历史文件保存失败"));
+            }
+        }
+
+        function readCategoryOverrides() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(CATEGORY_OVERRIDES_KEY));
+                return saved && typeof saved === "object" ? saved : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function readAppUsage() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(APP_USAGE_KEY));
+                return saved && typeof saved === "object" ? saved : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function getAppUsageKey(appOrPath) {
+            if (typeof appOrPath === "string") {
+                return appOrPath.trim().toLowerCase();
+            }
+            return String(appOrPath?.launchPath || appOrPath?.path || appOrPath?.id || appOrPath?.name || "")
+                .trim()
+                .toLowerCase();
+        }
+
+        function rankFavoriteApps(apps) {
+            return [...apps]
+                .sort((a, b) => {
+                    const usageA = appUsage[getAppUsageKey(a)] || {};
+                    const usageB = appUsage[getAppUsageKey(b)] || {};
+                    return (Number(usageB.count) || 0) - (Number(usageA.count) || 0)
+                        || (Number(usageB.lastOpened) || 0) - (Number(usageA.lastOpened) || 0)
+                        || String(a.name || "").localeCompare(String(b.name || ""), "zh-CN");
+                })
+                .slice(0, MAX_FAVORITE_APPS);
+        }
+
+        function recordAppLaunch(target) {
+            const key = getAppUsageKey(target);
+            if (!key) return;
+            const previous = appUsage[key] || {};
+            appUsage[key] = {
+                count: (Number(previous.count) || 0) + 1,
+                lastOpened: Date.now()
+            };
+            localStorage.setItem(APP_USAGE_KEY, JSON.stringify(appUsage));
+
+            const apps = allVisibleApps();
+            favoriteApps = rankFavoriteApps(apps);
+            renderApps();
+        }
+
+        function groupScannedApps(scannedApps) {
+            const grouped = new Map();
+            scannedApps.forEach(app => {
+                app.category = categoryOverrides[app.name.toLowerCase()] || app.category || "其他";
+                if (!grouped.has(app.category)) grouped.set(app.category, []);
+                grouped.get(app.category).push(app);
+            });
+            appGroups = Array.from(grouped, ([name, apps]) => ({ name, apps }));
+            favoriteApps = rankFavoriteApps(scannedApps);
+            renderApps();
+        }
+
+        function mergeArchivedTodos(items) {
+            const merged = new Map();
+            [...archivedTodos, ...items.filter(todo => todo.done)].forEach(todo => {
+                const key = Number(todo.serial) || String(todo.id);
+                if (key) merged.set(key, todo);
+            });
+            archivedTodos = Array.from(merged.values())
+                .filter(todo => todo.done)
+                .sort((a, b) => (a.serial || 0) - (b.serial || 0));
+        }
+
+        async function loadTodoHistory() {
+            if (!window.desktopAPI) return;
+            let file = await window.desktopAPI.loadTodoFile();
+            const legacyCompleted = todos.filter(todo => todo.done);
+            if (legacyCompleted.length && !file.exists) {
+                await window.desktopAPI.saveTodoFile({
+                    todos: legacyCompleted,
+                    nextSerial: nextTodoSerial
+                });
+                file = await window.desktopAPI.loadTodoFile();
+            }
+            archivedTodos = (file.todos || []).map(normalizeTodo).filter(todo => todo.done);
+            const archivedById = new Map(archivedTodos.map(todo => [String(todo.id), todo]));
+            todos = todos.map(todo => {
+                const archived = todo.done && archivedById.get(String(todo.id));
+                return archived ? { ...todo, ...archived } : todo;
+            });
+            nextTodoSerial = file.nextSerial || (archivedTodos.length + 1);
+            renderTodos();
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return "未记录";
+            return new Intl.DateTimeFormat("zh-CN", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            }).format(new Date(timestamp)).replace(/\//g, "-");
+        }
+
+        function formatDuration(milliseconds) {
+            if (!milliseconds || milliseconds < 0) return "不足 1 分钟";
+            const minutes = Math.max(1, Math.floor(milliseconds / 60000));
+            const days = Math.floor(minutes / 1440);
+            const hours = Math.floor((minutes % 1440) / 60);
+            const remainingMinutes = minutes % 60;
+            const parts = [];
+            if (days) parts.push(`${days}天`);
+            if (hours) parts.push(`${hours}小时`);
+            if (remainingMinutes || !parts.length) parts.push(`${remainingMinutes}分钟`);
+            return parts.join("");
+        }
+
+        function orderedTodos() {
+            return [...todos].sort((a, b) => (b.serial || 0) - (a.serial || 0));
+        }
+
+        function orderedHistoryTodos() {
+            const currentCompleted = todos.filter(todo => todo.done);
+            const merged = new Map();
+            [...archivedTodos, ...currentCompleted].forEach(todo => {
+                const key = Number(todo.serial) || String(todo.id);
+                if (key) merged.set(key, todo);
+            });
+            return Array.from(merged.values())
+                .filter(todo => todo.done)
+                .sort((a, b) => (b.serial || 0) - (a.serial || 0));
+        }
+
+        function renderApps() {
+            favorites.innerHTML = favoriteApps.map(renderApp).join("");
+            categories.innerHTML = appGroups.map(group => `
+                <section class="category">
+                    <div class="category-heading">${escapeHtml(group.name)}</div>
+                    <div class="app-row">${group.apps.map(renderApp).join("")}</div>
+                </section>
+            `).join("");
+            appCount.textContent = `${favoriteApps.length} / ${Math.min(MAX_FAVORITE_APPS, allVisibleApps().length)} 个`;
+            refreshIcons();
+        }
+
+        function renderApp(app) {
+            const icon = app.iconData
+                ? `<img src="${escapeHtml(app.iconData)}" alt="">`
+                : escapeHtml(app.icon || "·");
+            const iconClass = app.iconData ? " has-native-icon" : "";
+            const iconStyle = app.iconData ? "" : ` style="background:${escapeHtml(app.color || "#688f8c")}"`;
+            return `
+                <button class="app-item" type="button" data-app="${escapeHtml(app.name)}" data-path="${escapeHtml(app.launchPath || app.path || "")}" title="${escapeHtml(app.categoryReason ? `${app.name}：${app.categoryReason}` : `启动 ${app.name}`)}">
+                    <span class="app-icon${iconClass}"${iconStyle}>${icon}</span>
+                    <span class="app-name">${escapeHtml(app.name)}</span>
+                </button>
+            `;
+        }
+
+        function renderTodos() {
+            const allTodos = orderedTodos();
+            const remaining = allTodos.filter(todo => !todo.done).length;
+            todoCount.textContent = remaining ? `${remaining} 项待完成` : "全部完成";
+
+            const activeTodos = allTodos.filter(todo => !todo.done);
+            const completedTodos = orderedHistoryTodos();
+
+            if (!activeTodos.length) {
+                todoList.innerHTML = '<div class="empty-state">今天还没有任务，先写下一件要做的事。</div>';
+            } else {
+                todoList.innerHTML = activeTodos.map(renderTodoItem).join("");
+            }
+
+            todoHistory.innerHTML = `
+                <div class="history-heading">
+                    <span>历史记录目录</span>
+                    <span>${completedTodos.length} 条</span>
+                </div>
+                ${completedTodos.length
+                    ? completedTodos.map(renderHistoryItem).join("")
+                    : '<div class="empty-state">完成的 Todo 会保留在这里。</div>'}
+            `;
+            refreshIcons();
+        }
+
+        function renderTodoItem(todo) {
+            const elapsed = todo.done ? todo.completedAt - todo.createdAt : Date.now() - todo.createdAt;
+            return `
+                <div class="todo-item" data-id="${todo.id}">
+                    <span class="todo-number">${todo.serial ? `#${String(todo.serial).padStart(3, "0")}` : "待编号"}</span>
+                    <button class="todo-check ${todo.done ? "is-done" : ""}" type="button" data-action="toggle" aria-label="${todo.done ? "取消完成" : "标记完成"}">${todo.done ? '<i data-lucide="check"></i>' : ""}</button>
+                    <div>
+                        <div class="todo-text">${escapeHtml(todo.text)}</div>
+                        ${todo.note ? `<div class="todo-note">${escapeHtml(todo.note)}</div>` : ""}
+                        <div class="todo-time">创建 ${formatDate(todo.createdAt)} · 已进行 ${formatDuration(elapsed)}${todo.estimatedMinutes ? ` · 预计 ${todo.estimatedMinutes} 分钟` : ""}${todo.document ? ` · ${escapeHtml(todo.document.name)}` : ""}</div>
+                    </div>
+                    <div class="todo-actions">
+                        <button class="tiny-button" type="button" data-action="edit" title="编辑任务" aria-label="编辑任务"><i data-lucide="pencil"></i></button>
+                        <button class="tiny-button" type="button" data-action="delete" title="删除任务" aria-label="删除任务"><i data-lucide="trash-2"></i></button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHistoryItem(todo) {
+            const duration = formatDuration(todo.completedAt - todo.createdAt);
+            return `
+                <div class="history-item" data-id="${todo.id}">
+                    <div class="history-top">
+                        <span class="history-number">#${String(todo.serial).padStart(3, "0")}</span>
+                        <span class="history-check"><i data-lucide="check"></i></span>
+                        <span class="history-text" title="${escapeHtml(todo.text)}">${escapeHtml(todo.text)}</span>
+                        ${todo.document ? `<button class="document-link" type="button" data-action="open-document" title="打开 ${escapeHtml(todo.document.name)}"><i data-lucide="external-link"></i> ${escapeHtml(todo.document.name)}</button>` : ""}
+                    </div>
+                    <div class="history-meta">创建 ${formatDate(todo.createdAt)} · 完成 ${formatDate(todo.completedAt)} · 耗时 ${duration}</div>
+                    ${todo.note ? `<div class="history-note">${escapeHtml(todo.note)}</div>` : ""}
+                </div>
+            `;
+        }
+
+        function refreshIcons() {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, character => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+            }[character]));
+        }
+
+        function showToast(message) {
+            clearTimeout(toastTimer);
+            toast.textContent = message;
+            toast.classList.add("is-visible");
+            toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
+        }
+
+        function openModal(modal) {
+            modal.classList.add("is-visible");
+            modal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeModal(modal) {
+            modal.classList.remove("is-visible");
+            modal.setAttribute("aria-hidden", "true");
+        }
+
+        async function loadAISettings() {
+            if (!window.desktopAPI) return;
+            const config = await window.desktopAPI.getAIConfig();
+            aiConfigured = Boolean(config.hasApiKey);
+            aiBaseURL.value = config.baseURL || "https://api.openai.com/v1";
+            aiModel.value = config.model || "gpt-4o-mini";
+            aiApiKey.value = "";
+            aiSettingsStatus.textContent = aiConfigured ? "已配置 Key" : "尚未配置 Key";
+        }
+
+        function currentAIConfig() {
+            return {
+                apiKey: aiApiKey.value.trim(),
+                baseURL: aiBaseURL.value.trim(),
+                model: aiModel.value.trim()
+            };
+        }
+
+        function allVisibleApps() {
+            const apps = [...favoriteApps, ...appGroups.flatMap(group => group.apps)];
+            const unique = new Map();
+            apps.forEach(app => {
+                if (app?.name && !unique.has(app.name.toLowerCase())) {
+                    unique.set(app.name.toLowerCase(), app);
+                }
+            });
+            return Array.from(unique.values());
+        }
+
+        function applyAppCategories(results) {
+            const apps = allVisibleApps();
+            const categoryMap = new Map(
+                results
+                    .filter(item => item && item.name && item.category)
+                    .map(item => [String(item.name).toLowerCase(), String(item.category)])
+            );
+            results.filter(item => item && item.category && Number.isInteger(item.index) && apps[item.index])
+                .forEach(item => {
+                    const app = apps[item.index];
+                    app.categoryReason = String(item.reason || "").trim().slice(0, 300);
+                    categoryMap.set(app.name.toLowerCase(), String(item.category).trim());
+                });
+            const groups = new Map();
+            apps.forEach(app => {
+                const category = categoryMap.get(app.name.toLowerCase()) || app.category || "待 AI 分类";
+                app.category = category;
+                categoryOverrides[app.name.toLowerCase()] = category;
+                if (!groups.has(category)) groups.set(category, []);
+                groups.get(category).push(app);
+            });
+            localStorage.setItem(CATEGORY_OVERRIDES_KEY, JSON.stringify(categoryOverrides));
+            appGroups = Array.from(groups, ([name, apps]) => ({ name, apps }));
+            renderApps();
+        }
+
+        async function runAIOrganize() {
+            if (!window.desktopAPI) {
+                showToast("浏览器原型无法调用 AI");
+                return;
+            }
+            if (!aiConfigured) {
+                openModal(aiSettingsModal);
+                showToast("请先配置 AI API");
+                return;
+            }
+            const apps = allVisibleApps();
+            if (!apps.length) {
+                showToast("请先扫描应用");
+                return;
+            }
+            aiOrganizeButton.disabled = true;
+            try {
+                const results = await window.desktopAPI.classifyApps(apps);
+                applyAppCategories(results);
+                showToast(`AI 已按用途整理 ${results.length} 个应用`);
+            } catch (error) {
+                showToast(error.message || "AI 应用整理失败");
+            } finally {
+                aiOrganizeButton.disabled = false;
+            }
+        }
+
+        function renderChat() {
+            chatMessages.innerHTML = chatHistory.length
+                ? chatHistory.map(message => `<div class="chat-message ${message.role}">${escapeHtml(message.content)}</div>`).join("")
+                : '<div class="empty-state">可以问我：今天先做什么？如何拆分某个任务？</div>';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addPlannedTodos(items) {
+            const tasks = (Array.isArray(items) ? items : []).filter(item => item && item.text);
+            if (!tasks.length) {
+                showToast("没有可加入的规划任务");
+                return;
+            }
+            const now = Date.now();
+            tasks.forEach((item, index) => {
+                todos.unshift({
+                    id: now + index,
+                    serial: null,
+                    text: String(item.text).trim().slice(0, 200),
+                    note: String(item.note || "").trim().slice(0, 1000),
+                    estimatedMinutes: Number(item.estimatedMinutes) || null,
+                    done: false,
+                    createdAt: now + index,
+                    completedAt: null,
+                    document: null
+                });
+            });
+            saveTodos();
+            renderTodos();
+            showToast(`已加入 ${tasks.length} 项 Todo`);
+        }
+
+        function renderPlanPreview(plan) {
+            pendingPlan = plan;
+            const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+            if (!tasks.length) {
+                planPreview.classList.remove("is-visible");
+                planPreview.innerHTML = "";
+                return;
+            }
+            planPreview.innerHTML = `
+                <div class="plan-preview-header">
+                    <span class="plan-preview-title">AI 规划任务</span>
+                    <button class="button-primary" type="button" data-plan-action="add-all">全部加入 Todo</button>
+                </div>
+                ${plan.summary ? `<div class="plan-summary">${escapeHtml(plan.summary)}</div>` : ""}
+                ${tasks.map((task, index) => `
+                    <div class="plan-task">
+                        <span class="plan-task-index">${index + 1}</span>
+                        <div>
+                            <div class="plan-task-text">${escapeHtml(task.text)}</div>
+                            ${task.note ? `<div class="plan-task-note">${escapeHtml(task.note)}</div>` : ""}
+                        </div>
+                        <div>
+                            <div class="plan-task-time">${Number(task.estimatedMinutes) || 30} 分钟</div>
+                            <button class="tiny-button" type="button" data-plan-action="add-one" data-plan-index="${index}" title="加入 Todo" aria-label="加入 Todo"><i data-lucide="plus"></i></button>
+                        </div>
+                    </div>
+                `).join("")}
+            `;
+            planPreview.classList.add("is-visible");
+            refreshIcons();
+        }
+
+        async function askAI(message) {
+            if (!window.desktopAPI) throw new Error("浏览器原型无法调用 AI");
+            if (!aiConfigured) {
+                openModal(aiSettingsModal);
+                throw new Error("请先配置 AI API");
+            }
+            chatHistory.push({ role: "user", content: message });
+            renderChat();
+            const result = await window.desktopAPI.todoChat({
+                todos,
+                messages: chatHistory
+            });
+            const answer = typeof result === "string" ? result : String(result?.reply || "");
+            if (result?.addTasks?.length) {
+                addPlannedTodos(result.addTasks);
+            }
+            chatHistory.push({
+                role: "assistant",
+                content: result?.addTasks?.length
+                    ? `${answer || "已按你的要求处理。"}\n已加入 ${result.addTasks.length} 项 Todo。`
+                    : answer
+            });
+            renderChat();
+        }
+
+        function openPanel() {
+            if (window.desktopAPI) {
+                window.desktopAPI.expandWindow();
+            }
+            panelDock.classList.add("is-open");
+        }
+
+        function closePanel() {
+            if (!pinned) {
+                panelDock.classList.remove("is-open");
+                if (window.desktopAPI) {
+                    window.desktopAPI.collapseWindow();
+                }
+            }
+        }
+
+        function scheduleClose() {
+            window.clearTimeout(collapseTimer);
+            collapseTimer = window.setTimeout(closePanel, 420);
+        }
+
+        railButton.addEventListener("mouseenter", () => {
+            if (railDrag) return;
+            window.clearTimeout(collapseTimer);
+            window.clearTimeout(railHoverTimer);
+            railHoverTimer = window.setTimeout(openPanel, 220);
+        });
+        railButton.addEventListener("pointerdown", event => {
+            if (event.button !== 0 || !window.desktopAPI) return;
+            window.clearTimeout(railHoverTimer);
+            railDrag = {
+                pointerId: event.pointerId,
+                startX: event.screenX,
+                startY: event.screenY,
+                lastX: event.screenX,
+                lastY: event.screenY,
+                moved: false
+            };
+            railButton.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
+        });
+        railButton.addEventListener("pointermove", event => {
+            if (!railDrag || event.pointerId !== railDrag.pointerId) return;
+            const dx = event.screenX - railDrag.lastX;
+            const dy = event.screenY - railDrag.lastY;
+            if (Math.abs(event.screenX - railDrag.startX) > 4 || Math.abs(event.screenY - railDrag.startY) > 4) {
+                railDrag.moved = true;
+            }
+            if (dx || dy) {
+                window.desktopAPI.movePanelBy({ dx, dy });
+                railDrag.lastX = event.screenX;
+                railDrag.lastY = event.screenY;
+            }
+        });
+        railButton.addEventListener("pointerup", event => {
+            if (!railDrag || event.pointerId !== railDrag.pointerId) return;
+            suppressRailClick = railDrag.moved;
+            railDrag = null;
+            railButton.releasePointerCapture?.(event.pointerId);
+        });
+        railButton.addEventListener("pointercancel", () => {
+            railDrag = null;
+        });
+        railButton.addEventListener("click", () => {
+            if (suppressRailClick) {
+                suppressRailClick = false;
+                return;
+            }
+            openPanel();
+        });
+        railButton.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            if (window.desktopAPI) {
+                window.desktopAPI.showContextMenu();
+            }
+        });
+        closeButton.addEventListener("click", () => {
+            pinned = false;
+            panelDock.classList.remove("is-open");
+            pinButton.innerHTML = '<i data-lucide="pin"></i>';
+            pinButton.title = "固定面板";
+            refreshIcons();
+            if (window.desktopAPI) {
+                window.desktopAPI.collapseWindow();
+            }
+        });
+
+        aiSettingsButton.addEventListener("click", async () => {
+            await loadAISettings();
+            openModal(aiSettingsModal);
+        });
+
+        document.querySelectorAll("[data-close-modal]").forEach(button => {
+            button.addEventListener("click", () => closeModal(document.getElementById(button.dataset.closeModal)));
+        });
+
+        document.querySelectorAll(".modal-backdrop").forEach(backdrop => {
+            backdrop.addEventListener("click", event => {
+                if (event.target === backdrop) closeModal(backdrop);
+            });
+        });
+
+        aiSettingsForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            if (!window.desktopAPI) return;
+            aiSettingsStatus.textContent = "保存中...";
+            const result = await window.desktopAPI.saveAIConfig(currentAIConfig());
+            if (!result.ok) {
+                aiSettingsStatus.textContent = result.error || "保存失败";
+                return;
+            }
+            aiConfigured = result.hasApiKey;
+            aiApiKey.value = "";
+            aiSettingsStatus.textContent = "已保存";
+            showToast("AI 设置已保存");
+        });
+
+        clearAIKey.addEventListener("click", async () => {
+            if (!window.desktopAPI) return;
+            const result = await window.desktopAPI.saveAIConfig({
+                baseURL: aiBaseURL.value.trim(),
+                model: aiModel.value.trim(),
+                clearApiKey: true
+            });
+            aiConfigured = false;
+            aiSettingsStatus.textContent = result.ok ? "Key 已清除" : (result.error || "清除失败");
+        });
+
+        testAIButton.addEventListener("click", async () => {
+            if (!window.desktopAPI) return;
+            testAIButton.disabled = true;
+            aiSettingsStatus.textContent = "测试中...";
+            try {
+                const result = await window.desktopAPI.testAIConfig(currentAIConfig());
+                aiSettingsStatus.textContent = result.ok ? "连接成功" : `返回：${result.reply || "失败"}`;
+            } catch (error) {
+                aiSettingsStatus.textContent = error.message || "连接失败";
+            } finally {
+                testAIButton.disabled = false;
+            }
+        });
+
+        aiOrganizeButton.addEventListener("click", runAIOrganize);
+
+        planButton.addEventListener("click", async () => {
+            if (!window.desktopAPI || !aiConfigured) {
+                await loadAISettings();
+                openModal(aiSettingsModal);
+                showToast("请先配置 AI API");
+                return;
+            }
+            planButton.disabled = true;
+            try {
+                const plan = await window.desktopAPI.planTodos(todos.filter(todo => !todo.done));
+                openModal(chatModal);
+                renderPlanPreview(plan);
+                chatHistory.push({
+                    role: "assistant",
+                    content: plan.summary || `已生成 ${plan.tasks?.length || 0} 项可执行任务，请在下方选择加入 Todo。`
+                });
+                renderChat();
+            } catch (error) {
+                showToast(error.message || "AI 规划失败");
+            } finally {
+                planButton.disabled = false;
+            }
+        });
+
+        chatButton.addEventListener("click", async () => {
+            await loadAISettings();
+            openModal(chatModal);
+            renderChat();
+            chatInput.focus();
+        });
+
+        chatForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+            chatInput.value = "";
+            chatForm.querySelector("button").disabled = true;
+            try {
+                await askAI(message);
+            } catch (error) {
+                chatHistory.push({ role: "assistant", content: error.message || "AI 请求失败" });
+                renderChat();
+            } finally {
+                chatForm.querySelector("button").disabled = false;
+            }
+        });
+
+        quitButton.addEventListener("click", () => {
+            if (!window.desktopAPI) {
+                showToast("浏览器原型无法退出桌面应用");
+                return;
+            }
+            window.desktopAPI.quit();
+        });
+
+        pinButton.addEventListener("click", () => {
+            pinned = !pinned;
+            panelDock.classList.toggle("is-open", pinned);
+            pinButton.innerHTML = `<i data-lucide="${pinned ? "pin-off" : "pin"}"></i>`;
+            pinButton.title = pinned ? "取消固定" : "固定面板";
+            refreshIcons();
+            showToast(pinned ? "面板已固定" : "面板恢复悬停展开");
+            if (window.desktopAPI) {
+                if (pinned) {
+                    window.desktopAPI.expandWindow();
+                } else {
+                    window.desktopAPI.collapseWindow();
+                }
+            }
+        });
+
+        panelDock.addEventListener("mouseleave", () => {
+            if (!pinned) {
+                scheduleClose();
+            }
+        });
+
+        panelDock.addEventListener("mouseenter", () => {
+            window.clearTimeout(collapseTimer);
+        });
+
+        resizeHandle.addEventListener("pointerdown", event => {
+            if (event.button !== 0 || !window.desktopAPI || !panelDock.classList.contains("is-open")) return;
+            resizeDrag = {
+                pointerId: event.pointerId,
+                lastX: event.screenX,
+                lastY: event.screenY
+            };
+            window.clearTimeout(collapseTimer);
+            resizeHandle.setPointerCapture?.(event.pointerId);
+            event.preventDefault();
+        });
+
+        resizeHandle.addEventListener("pointermove", event => {
+            if (!resizeDrag || event.pointerId !== resizeDrag.pointerId) return;
+            const dx = event.screenX - resizeDrag.lastX;
+            const dy = event.screenY - resizeDrag.lastY;
+            if (dx || dy) {
+                window.desktopAPI.resizeWindowBy({ dx, dy });
+                resizeDrag.lastX = event.screenX;
+                resizeDrag.lastY = event.screenY;
+            }
+        });
+
+        resizeHandle.addEventListener("pointerup", event => {
+            if (!resizeDrag || event.pointerId !== resizeDrag.pointerId) return;
+            resizeDrag = null;
+            resizeHandle.releasePointerCapture?.(event.pointerId);
+        });
+
+        resizeHandle.addEventListener("pointercancel", () => {
+            resizeDrag = null;
+        });
+
+        planPreview.addEventListener("click", event => {
+            const button = event.target.closest("[data-plan-action]");
+            if (!button || !pendingPlan) return;
+            const tasks = pendingPlan.tasks || [];
+            if (button.dataset.planAction === "add-all") {
+                addPlannedTodos(tasks);
+                renderPlanPreview(null);
+                return;
+            }
+            if (button.dataset.planAction === "add-one") {
+                const index = Number(button.dataset.planIndex);
+                if (!tasks[index]) return;
+                addPlannedTodos([tasks[index]]);
+                pendingPlan.tasks = tasks.filter((_task, taskIndex) => taskIndex !== index);
+                renderPlanPreview(pendingPlan);
+            }
+        });
+
+        if (window.desktopAPI) {
+            window.desktopAPI.onPanelState?.(state => {
+                panelDock.classList.toggle("is-open", Boolean(state?.expanded));
+            });
+        }
+
+        todoForm.addEventListener("submit", event => {
+            event.preventDefault();
+            const text = todoInput.value.trim();
+            if (!text) {
+                todoInput.focus();
+                return;
+            }
+            todos.unshift({
+                id: Date.now(),
+                serial: null,
+                text,
+                note: todoNoteInput.value.trim(),
+                done: false,
+                createdAt: Date.now(),
+                completedAt: null,
+                document: pendingDocument
+            });
+            saveTodos();
+            renderTodos();
+            todoInput.value = "";
+            todoNoteInput.value = "";
+            pendingDocument = null;
+            attachedDocument.textContent = "";
+            attachedDocument.classList.remove("is-visible");
+            showToast("任务已添加");
+        });
+
+        attachButton.addEventListener("click", async () => {
+            if (!window.desktopAPI) {
+                showToast("浏览器原型不支持选择本地文档");
+                return;
+            }
+            const documentInfo = await window.desktopAPI.chooseDocument();
+            if (!documentInfo) return;
+            pendingDocument = documentInfo;
+            attachedDocument.textContent = `已绑定：${documentInfo.name}`;
+            attachedDocument.title = documentInfo.path;
+            attachedDocument.classList.add("is-visible");
+        });
+
+        async function handleTodoClick(event) {
+            const actionButton = event.target.closest("[data-action]");
+            if (!actionButton) return;
+
+            const todoItem = actionButton.closest(".todo-item");
+            const historyItem = actionButton.closest(".history-item");
+            const item = todoItem || historyItem;
+            if (!item) return;
+            const id = Number(item.dataset.id);
+            const todo = todos.find(item => item.id === id);
+            if (!todo) return;
+
+            if (actionButton.dataset.action === "toggle") {
+                todo.done = !todo.done;
+                if (todo.done && !todo.serial) {
+                    todo.serial = nextTodoSerial++;
+                }
+                todo.completedAt = todo.done ? Date.now() : null;
+                saveTodos();
+                renderTodos();
+            }
+
+            if (actionButton.dataset.action === "delete") {
+                todos = todos.filter(item => item.id !== id);
+                saveTodos();
+                renderTodos();
+                showToast("任务已删除");
+            }
+
+            if (actionButton.dataset.action === "open-document" && todo.document && window.desktopAPI) {
+                const result = await window.desktopAPI.openDocument(todo.document.path);
+                if (!result.ok) showToast("无法打开文档");
+            }
+
+            if (actionButton.dataset.action === "edit") {
+                const nextText = window.prompt("编辑任务标题", todo.text);
+                if (nextText === null) return;
+                if (!nextText.trim()) {
+                    showToast("任务内容不能为空");
+                    return;
+                }
+                todo.text = nextText.trim();
+                const nextNote = window.prompt("编辑正文备注（可留空）", todo.note || "");
+                if (nextNote !== null) {
+                    todo.note = nextNote.trim();
+                }
+                saveTodos();
+                renderTodos();
+            }
+        }
+
+        todoList.addEventListener("click", handleTodoClick);
+        todoHistory.addEventListener("click", handleTodoClick);
+
+        clearCompleted.addEventListener("click", () => {
+            const completed = todos.filter(todo => todo.done);
+            if (!completed.length) return;
+            todos = todos.filter(todo => !todo.done);
+            saveTodos();
+            renderTodos();
+            showToast("已从面板清理，历史文件仍保留");
+        });
+
+        openTodoFile.addEventListener("click", async () => {
+            if (!window.desktopAPI) {
+                showToast("浏览器原型无法打开本地历史文件");
+                return;
+            }
+            window.desktopAPI.openTodoViewer();
+        });
+
+        document.addEventListener("click", async event => {
+            const appButton = event.target.closest("[data-app]");
+            if (!appButton) return;
+            const target = appButton.dataset.path;
+            if (!window.desktopAPI || !target) {
+                showToast(`桌面版将启动 ${appButton.dataset.app}`);
+                return;
+            }
+            const result = await window.desktopAPI.launchApp(target);
+            if (result.ok) {
+                recordAppLaunch(target);
+            }
+            showToast(result.ok ? `正在启动 ${appButton.dataset.app}` : `无法启动 ${appButton.dataset.app}`);
+        });
+
+        scanButton.addEventListener("click", async () => {
+            scanButton.disabled = true;
+            scanButton.innerHTML = '<i data-lucide="loader-circle"></i> 扫描中...';
+            refreshIcons();
+            if (!window.desktopAPI) {
+                window.setTimeout(() => {
+                    scanButton.disabled = false;
+                    scanButton.innerHTML = '<i data-lucide="refresh-cw"></i> 扫描应用';
+                    refreshIcons();
+                    showToast("浏览器原型不具备 Windows 应用扫描权限");
+                }, 700);
+                return;
+            }
+
+            try {
+                const scannedApps = await window.desktopAPI.scanApps();
+                groupScannedApps(scannedApps);
+                showToast(`已找到 ${scannedApps.length} 个 Windows 应用`);
+            } catch (error) {
+                showToast("扫描应用失败");
+            } finally {
+                scanButton.disabled = false;
+                scanButton.innerHTML = '<i data-lucide="refresh-cw"></i> 扫描应用';
+                refreshIcons();
+            }
+        });
+
+        renderApps();
+        renderTodos();
+        refreshIcons();
+
+        if (window.desktopAPI) {
+            loadTodoHistory();
+            window.desktopAPI.scanApps().then(scannedApps => {
+                if (!scannedApps.length) return;
+                groupScannedApps(scannedApps);
+            });
+            loadAISettings();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "name": "desktop-utility-panel",
+  "version": "0.1.0",
+  "description": "A Windows desktop launcher and todo panel.",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron main.js",
+    "dev": "electron main.js",
+    "dist": "node build.js"
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "com.local.desktoputilitypanel",
+    "productName": "桌面效率面板",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop-utility-panel.html",
+      "todo-history.html",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "signAndEditExecutable": false
+    }
+  },
+  "dependencies": {
+    "@fontsource/noto-sans-sc": "^5.3.1",
+    "lucide": "^0.468.0",
+    "openai": "^4.104.0"
+  }
+}

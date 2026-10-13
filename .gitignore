@@ -1,0 +1,29 @@
+node_modules/
+
+# Electron / npm caches
+.electron-cache/
+.builder-cache/
+.npm-cache/
+
+# Build output
+release/
+dist/
+out/
+
+# Local app/runtime data
+todo.txt
+*.log
+desktop-utility-panel.log
+todo-history.json
+panel-position.json
+ai-config.json
+
+# Environment and OS/editor noise
+.env
+.env.*
+!.env.example
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/

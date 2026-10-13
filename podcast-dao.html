@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>播客DAO协作架构</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#38b6ff',
+                        secondary: '#0077cc',
+                        accent: '#0055aa',
+                        neutral: '#f0f4f8',
+                        dark: '#333333',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-podcast text-primary text-3xl"></i>
+                <h1 class="text-2xl font-bold text-dark">播客DAO</h1>
+            </div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#overview" class="text-gray-600 hover:text-primary transition-colors">概览</a>
+                <a href="#roles" class="text-gray-600 hover:text-primary transition-colors">角色</a>
+                <a href="#governance" class="text-gray-600 hover:text-primary transition-colors">治理</a>
+                <a href="#finance" class="text-gray-600 hover:text-primary transition-colors">资金</a>
+                <a href="#tech" class="text-gray-600 hover:text-primary transition-colors">技术</a>
+            </div>
+            <button class="md:hidden text-gray-600">
+                <i class="fa fa-bars text-2xl"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 英雄区域 -->
+    <section class="bg-gradient-to-r from-primary to-secondary text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 text-shadow">播客DAO协作架构</h1>
+            <p class="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">去中心化的播客创作与管理平台，让四位参与者共同构建高质量内容</p>
+            <div class="flex justify-center space-x-4">
+                <a href="#roles" class="bg-white text-primary px-6 py-3 rounded-full font-medium hover:bg-gray-100 transition-colors">
+                    了解角色
+                </a>
+                <a href="#governance" class="bg-transparent border-2 border-white text-white px-6 py-3 rounded-full font-medium hover:bg-white/10 transition-colors">
+                    治理机制
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 概览 -->
+    <section id="overview" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">核心目标</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fa fa-microphone"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">高质量内容</h3>
+                    <p class="text-gray-600">共同创建专业、有深度的播客内容，满足听众需求</p>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fa fa-users"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">去中心化决策</h3>
+                    <p class="text-gray-600">通过DAO治理机制，实现公平、透明的决策流程</p>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fa fa-balance-scale"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">公平分配</h3>
+                    <p class="text-gray-600">基于贡献度的收益分配机制，确保每位参与者获得合理回报</p>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fa fa-eye"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">透明管理</h3>
+                    <p class="text-gray-600">公开透明的资金和资源管理，确保DAO的可持续发展</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 角色 -->
+    <section id="roles" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">参与者角色与职责</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-primary/10 p-4 rounded-full mr-4">
+                            <i class="fa fa-lightbulb-o text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold">内容策划</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>选题策划与脚本创作</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>嘉宾邀请与协调</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>内容质量把控</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>贡献方式：内容贡献</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-primary/10 p-4 rounded-full mr-4">
+                            <i class="fa fa-comment text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold">主持人</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>主持播客录制</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>内容呈现与互动</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>与嘉宾沟通协调</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>贡献方式：表现贡献</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-primary/10 p-4 rounded-full mr-4">
+                            <i class="fa fa-sliders text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold">技术编辑</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>音频剪辑与后期制作</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>音效与音乐添加</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>播客发布与平台管理</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>贡献方式：技术贡献</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <div class="flex items-center mb-6">
+                        <div class="bg-primary/10 p-4 rounded-full mr-4">
+                            <i class="fa fa-bullhorn text-primary text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-semibold">运营推广</h3>
+                    </div>
+                    <ul class="space-y-3 text-gray-600">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>内容分发与推广</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>社区运营与互动</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>赞助与合作对接</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-2"></i>
+                            <span>贡献方式：运营贡献</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 治理机制 -->
+    <section id="governance" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">治理机制</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary">投票权分配</h3>
+                    <div class="bg-neutral p-6 rounded-xl mb-6">
+                        <h4 class="font-medium mb-3">初始分配</h4>
+                        <div class="w-full bg-gray-200 rounded-full h-4 mb-4">
+                            <div class="flex">
+                                <div class="bg-primary h-4 rounded-l-full" style="width: 25%"></div>
+                                <div class="bg-primary h-4" style="width: 25%"></div>
+                                <div class="bg-primary h-4" style="width: 25%"></div>
+                                <div class="bg-primary h-4 rounded-r-full" style="width: 25%"></div>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">每位参与者拥有25%的投票权</p>
+                    </div>
+                    <div class="bg-neutral p-6 rounded-xl">
+                        <h4 class="font-medium mb-3">动态调整</h4>
+                        <p class="text-gray-600">基于贡献度加权，通过智能合约自动计算投票权</p>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold mb-6 text-primary">决策流程</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center mr-4">1</div>
+                            <div>
+                                <h4 class="font-medium">提案</h4>
+                                <p class="text-gray-600">任何参与者可提交提案（内容选题、资金使用、合作方等）</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center mr-4">2</div>
+                            <div>
+                                <h4 class="font-medium">讨论</h4>
+                                <p class="text-gray-600">48小时讨论期，参与者可提出意见和建议</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center mr-4">3</div>
+                            <div>
+                                <h4 class="font-medium">投票</h4>
+                                <p class="text-gray-600">72小时投票期，超过50%同意即可通过</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="bg-primary text-white w-8 h-8 rounded-full flex items-center justify-center mr-4">4</div>
+                            <div>
+                                <h4 class="font-medium">执行</h4>
+                                <p class="text-gray-600">通过的提案由相关角色执行</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 资金管理 -->
+    <section id="finance" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">资金管理</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <h3 class="text-2xl font-semibold mb-6 text-primary">资金池</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <i class="fa fa-plus-circle text-primary mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium">初始资金</h4>
+                                <p class="text-gray-600">参与者共同出资（可选）</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fa fa-arrow-down text-primary mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium">收入来源</h4>
+                                <p class="text-gray-600">广告、赞助、会员订阅、平台分成</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <i class="fa fa-arrow-up text-primary mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium">支出</h4>
+                                <p class="text-gray-600">制作成本、设备升级、推广费用、参与者报酬</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-xl shadow-md card-hover">
+                    <h3 class="text-2xl font-semibold mb-6 text-primary">收益分配</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-medium mb-2">基础分配</h4>
+                            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                                <div class="bg-primary h-4 rounded-full" style="width: 25%"></div>
+                            </div>
+                            <p class="text-gray-600">每位参与者获得25%的基础收益</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium mb-2">奖励分配</h4>
+                            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                                <div class="bg-secondary h-4 rounded-full" style="width: 10%"></div>
+                            </div>
+                            <p class="text-gray-600">根据贡献度额外分配10%的收益</p>
+                        </div>
+                        <div>
+                            <h4 class="font-medium mb-2">留存资金</h4>
+                            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                                <div class="bg-accent h-4 rounded-full" style="width: 10%"></div>
+                            </div>
+                            <p class="text-gray-600">10%资金留存用于DAO发展</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技术实现 -->
+    <section id="tech" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">技术实现</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-link"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">区块链平台</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>以太坊：智能合约管理</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>Aragon（DAO管理工具）</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>Colony（贡献管理）</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-code"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">智能合约</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>治理合约：管理投票和决策</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>资金合约：管理资金池和分配</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>贡献合约：记录和验证贡献</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-wrench"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3">运营工具</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>Notion（内容管理）</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>Discord（沟通）</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-check text-primary mr-2"></i>
+                            <span>Anchor（发布）</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 启动步骤 -->
+    <section class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">启动步骤</h2>
+            <div class="max-w-3xl mx-auto">
+                <div class="space-y-8">
+                    <div class="flex">
+                        <div class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mr-6 flex-shrink-0">1</div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">初始化</h3>
+                            <ul class="space-y-2 text-gray-600">
+                                <li class="flex items-start">
+                                    <i class="fa fa-angle-right text-primary mt-1 mr-2"></i>
+                                    <span>确定参与者角色和职责</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-angle-right text-primary mt-1 mr-2"></i>
+                                    <span>制定DAO章程（包含治理规则、资金管理等）</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-angle-right text-primary mt-1 mr-2"></i>
+                                    <span>部署智能合约（可使用Aragon等工具）</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="flex">
+                        <div class="bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center mr-6 flex-shrink-0">2</div>
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">运营</h3>
+                            <ul class="space-y-2 text-gray-600">
+                                <li class="flex items-start">
+                                    <i class="fa fa-angle-right text-primary mt-1 mr-2"></i>
+                                    <span>定期召开DAO会议（每周/双周）</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-angle-right text-primary mt-1 mr-2"></i>
+                                    <span>记录贡献和决策</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-angle-right text-primary mt-1 mr-2"></i>
+                                    <span>定期评估和调整架构</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 优势 -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-dark">优势</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-neutral p-6 rounded-xl text-center card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-circle-o-notch"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">去中心化</h3>
+                    <p class="text-gray-600">避免单一决策失误，集体智慧决策</p>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl text-center card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-eye"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">公平透明</h3>
+                    <p class="text-gray-600">所有决策和资金使用公开可查</p>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl text-center card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-handshake-o"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">激励兼容</h3>
+                    <p class="text-gray-600">贡献与收益直接挂钩，提高参与积极性</p>
+                </div>
+                <div class="bg-neutral p-6 rounded-xl text-center card-hover">
+                    <div class="text-primary text-3xl mb-4">
+                        <i class="fa fa-sliders"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">灵活性</h3>
+                    <p class="text-gray-600">可根据项目发展调整架构和规则</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 mb-6 md:mb-0">
+                    <i class="fa fa-podcast text-primary text-3xl"></i>
+                    <h2 class="text-2xl font-bold">播客DAO</h2>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#overview" class="hover:text-primary transition-colors">概览</a>
+                    <a href="#roles" class="hover:text-primary transition-colors">角色</a>
+                    <a href="#governance" class="hover:text-primary transition-colors">治理</a>
+                    <a href="#finance" class="hover:text-primary transition-colors">资金</a>
+                    <a href="#tech" class="hover:text-primary transition-colors">技术</a>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>© 2026 播客DAO. 去中心化的播客创作与管理平台.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('py-2');
+                nav.classList.remove('py-4');
+            } else {
+                nav.classList.add('py-4');
+                nav.classList.remove('py-2');
+            }
+        });
+    </script>
+</body>
+</html>
