@@ -4,6 +4,7 @@ node_modules/
 .electron-cache/
 .builder-cache/
 .npm-cache/
+.chrome-preview-profile/
 
 # Build output
 release/
